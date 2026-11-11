@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Alert, Button, Flex, Input, Pagination, message } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
@@ -23,16 +23,23 @@ export default function UserList() {
   const { data, loading, error } = useUsers(page, size)
   const [added, setAdded] = useState<Row[]>([])
   const [q, setQ] = useState('')
+  const [dq, setDq] = useState('')
   const [open, setOpen] = useState(false)
   const [msg, holder] = message.useMessage()
+
+  // input nya tetep langsung update, filter nya nunggu user berhenti ngetik 300ms
+  useEffect(() => {
+    const t = setTimeout(() => setDq(q), 300)
+    return () => clearTimeout(t)
+  }, [q])
 
   // randomuser ga punya search, so search nya di client: data page ini + data baru
   const rows = useMemo(() => {
     const all = [...added, ...data.map((u, i) => ({ ...u, key: 'u' + i }))]
-    const s = q.trim().toLowerCase()
+    const s = dq.trim().toLowerCase()
     if (!s) return all
     return all.filter((r) => [r.name, r.email, r.phone, r.cell, r.location].some((v) => v.toLowerCase().includes(s)))
-  }, [added, data, q])
+  }, [added, data, dq])
 
   // pushState cukup buat update URL + useSearchParams, ga perlu round trip ke server Next kayak router.push
   const changePage = (p: number, s: number) => {
@@ -54,7 +61,11 @@ export default function UserList() {
           allowClear
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          onSearch={(v) => setQ(v)}
+          onSearch={(v) => {
+            // enter / clear langsung filter, skip debounce
+            setQ(v)
+            setDq(v)
+          }}
           style={{ maxWidth: 420 }}
         />
         <Button icon={<PlusOutlined />} onClick={() => setOpen(true)} style={{ borderColor: '#434343' }}>
