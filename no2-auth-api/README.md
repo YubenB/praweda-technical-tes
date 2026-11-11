@@ -37,7 +37,7 @@ curl -b jar.txt http://localhost:3002/me
   Trade-off: 2 tab refresh barengan bisa ke-logout.
 - Access token (15 min) juga di-cek ke session. Ga full stateless, tapi logout / revoke langsung berlaku.
 - JWT pake `iss` / `aud` / `sub`, algorithm di-pin HS256 waktu verify. `JWT_SECRET` wajib di production.
-- Basic client auth di-parse sesuai RFC 6749 2.3.1: split di `:` pertama + url-decode.
+- Basic client auth di-parse sesuai spec: split di `:` pertama + url-decode.
 - Cross-site POST di-block via `Sec-Fetch-Site`, buat cegah login CSRF yg ga ke-cover SameSite=Lax.
 - Password grant throttle: 5x salah per username + IP, lock 15 menit (429 + `Retry-After`).
 - Password disimpen scrypt hash, refresh token yg disimpen cuma sha256 dari secret nya.

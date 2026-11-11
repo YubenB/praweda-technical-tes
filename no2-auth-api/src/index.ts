@@ -32,7 +32,7 @@ function sendTokens(res: Response, t: Tokens) {
   res.json({ access_token: t.access, token_type: 'Bearer', expires_in: ACCESS_TTL, refresh_token: t.refresh })
 }
 
-// brute force guard password grant (RFC 6749 4.3.2): max 5x salah per username+ip, abis itu lock 15 menit
+// brute force guard buat password grant: max 5x salah per username+ip, abis itu lock 15 menit
 const fails = new Map<string, { n: number; until: number }>()
 setInterval(() => {
   for (const [k, f] of fails) if (f.until < Date.now()) fails.delete(k)
