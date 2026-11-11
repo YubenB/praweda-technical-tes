@@ -1,3 +1,5 @@
+-- inner join sengaja: expected result cuma pasangan user + company yg lengkap.
+-- left join bakal munculin user tanpa company, right / full join munculin company yatim (kayak "Samudera")
 create or replace view v_user_company as
 select
   u.id            as user_id,
