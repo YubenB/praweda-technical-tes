@@ -2,7 +2,7 @@ import express, { type Request, type Response, type NextFunction } from 'express
 import cookieParser from 'cookie-parser'
 import { v4 as uuidv4 } from 'uuid'
 import { users, clients, findUser, hashPassword, checkPassword, safeEqual } from './data.js'
-import { auth, newSession, rotate, revoke, setTokenCookies, clearTokenCookies, ACCESS_TTL, type Tokens } from './auth.js'
+import { auth, newSession, rotate, revoke, parseBasic, setTokenCookies, clearTokenCookies, ACCESS_TTL, type Tokens } from './auth.js'
 
 const app = express()
 const PORT = Number(process.env.PORT) || 3002
@@ -30,19 +30,6 @@ function oauthError(res: Response, status: number, error: string, desc: string) 
 function sendTokens(res: Response, t: Tokens) {
   setTokenCookies(res, t)
   res.json({ access_token: t.access, token_type: 'Bearer', expires_in: ACCESS_TTL, refresh_token: t.refresh })
-}
-
-// RFC 6749 2.3.1: id & secret di-urlencode dulu baru base64, split di ':' pertama aja (secret boleh ada ':')
-function parseBasic(b64: string) {
-  const raw = Buffer.from(b64, 'base64').toString()
-  const i = raw.indexOf(':')
-  if (i < 0) return null
-  const dec = (s: string) => decodeURIComponent(s.replace(/\+/g, ' '))
-  try {
-    return { id: dec(raw.slice(0, i)), secret: dec(raw.slice(i + 1)) }
-  } catch {
-    return null
-  }
 }
 
 // brute force guard password grant (RFC 6749 4.3.2): max 5x salah per username+ip, abis itu lock 15 menit
@@ -145,9 +132,15 @@ app.get('/me', auth, (req, res) => {
   res.json({ id, username, iat, exp })
 })
 
+app.use((req, res) => {
+  res.status(404).json({ message: 'not found' })
+})
+
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-  if (err?.type === 'entity.parse.failed') {
-    return res.status(400).json({ error: 'invalid_request', error_description: 'invalid JSON body' })
+  // error dari body parser (json rusak, body kegedean, charset aneh) itu salah client, bukan 500
+  if (err?.expose && err.status < 500) {
+    const desc = err.type === 'entity.parse.failed' ? 'invalid JSON body' : err.message
+    return res.status(err.status).json({ error: 'invalid_request', error_description: desc })
   }
   console.error(err)
   res.status(500).json({ message: 'server error' })

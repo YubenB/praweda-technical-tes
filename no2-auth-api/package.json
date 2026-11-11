@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "tsx watch --env-file-if-exists=.env src/index.ts",
     "build": "tsc",
-    "start": "node --env-file-if-exists=.env dist/index.js"
+    "start": "node --env-file-if-exists=.env dist/index.js",
+    "test": "tsx --test \"src/**/*.test.ts\""
   },
   "dependencies": {
     "cookie-parser": "^1.4.7",

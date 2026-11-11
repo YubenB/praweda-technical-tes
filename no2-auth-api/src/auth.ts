@@ -63,6 +63,19 @@ export function rotate(token: string, clientId: string) {
 
 export const revoke = (token: string) => sessions.delete(token.split('.')[0])
 
+// RFC 6749 2.3.1: id & secret di-urlencode dulu baru base64, split di ':' pertama aja (secret boleh ada ':')
+export function parseBasic(b64: string) {
+  const raw = Buffer.from(b64, 'base64').toString()
+  const i = raw.indexOf(':')
+  if (i < 0) return null
+  const dec = (s: string) => decodeURIComponent(s.replace(/\+/g, ' '))
+  try {
+    return { id: dec(raw.slice(0, i)), secret: dec(raw.slice(i + 1)) }
+  } catch {
+    return null
+  }
+}
+
 function verifyAccess(token: string) {
   try {
     const p = jwt.verify(token, JWT_SECRET, { ...claims, algorithms: ['HS256'] }) as JwtPayload
